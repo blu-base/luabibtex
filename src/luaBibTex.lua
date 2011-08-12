@@ -1,7 +1,7 @@
+require"luno/argReader"
 
-
-function main()
-    print("Oi BibTex !!")
+function main(...)
+    print("Oi LuaBibTex !!")
 end
 
 
