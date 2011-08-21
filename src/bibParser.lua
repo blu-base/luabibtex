@@ -63,6 +63,11 @@ local function parseRefBody(refBody)
         fields[key] = value
     end
 
+    -- Acertar autores:
+    fields.authors = fields.author
+    fields.author = nil
+    fields.authors = stringEx.split(fields.authors, "%s+and%s+")
+
     return refName, fields
 end
 
@@ -98,7 +103,3 @@ function bibParser.loadFromFile(fileName)
     return getContentList(bibContents)
 end
 
-
---printDeep(bibParser.loadFromFile("referencias.bib"))
---printDeep(getContentList(teste))
---getContentList(teste)
