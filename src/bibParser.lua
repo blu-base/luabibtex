@@ -64,9 +64,10 @@ local function parseRefBody(refBody)
     end
 
     -- Acertar autores:
-    fields.authors = fields.author
-    fields.author = nil
-    fields.authors = stringEx.split(fields.authors, "%s+and%s+")
+    --fields.authors = fields.author
+    --fields.author = nil
+    --fields.authors = stringEx.split(fields.authors, "%s+and%s+")
+    fields.author = stringEx.split(fields.author, "%s+and%s+")
 
     return refName, fields
 end
@@ -98,8 +99,9 @@ local function getContentList(contents)
 end
 
 
-function bibParser.loadFromFile(fileName)
-    local bibContents = ioEx.getTextFromFile(fileName)
+--function bibParser.loadFromFile(fileName)
+function bibParser.parseContents(bibContents)
+    --local bibContents = ioEx.getTextFromFile(fileName)
     return getContentList(bibContents)
 end
 

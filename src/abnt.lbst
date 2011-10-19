@@ -1,0 +1,20 @@
+bibStyles =
+{
+    default =
+    {
+        author = {string.upper, putLastNameFirst},
+        title = {formatItalics},
+    },
+
+    article =
+    {
+        layout = "#author\n#title. #journal, #volume#number, #year",
+        author = {string.upper, putLastNameFirst},
+        title = {},
+        journal = {formatItalics},
+        number = {encloseParentheses}
+    }
+}
+
+
+
