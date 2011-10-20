@@ -2,18 +2,27 @@ bibStyles =
 {
     default =
     {
-        author = {string.upper, putLastNameFirst},
+        layout = "#author\n#title. #year.",
+        author = {string.upper, abbreviateFirstNames, putLastNameFirst},
         title = {formatItalics},
     },
 
     article =
     {
-        layout = "#author\n#title. #journal, #volume#number, #year",
-        author = {string.upper, putLastNameFirst},
+        layout = "#author\n#title. #journal, #volume#number, #year.",
+        author = {string.upper, abbreviateFirstNames, putLastNameFirst},
         title = {},
         journal = {formatItalics},
         number = {encloseParentheses}
-    }
+    },
+
+    book =
+    {
+        layout = "#author\n#title. #publisher, #year.",
+        author = {string.upper, abbreviateFirstNames, putLastNameFirst},
+        title = {formatItalics},
+    },
+
 }
 
 

@@ -9,11 +9,51 @@ bibDir = [[C:\Eric\UFF\Mestrado\Dissertacao\Base\Dissertacao\trunk]]
 auxFile = "dissertacao.aux"
 auxFileName = bibDir .. "\\" .. auxFile
 
+
+--##############################################################################
 fieldTypes =
 {
-    article = {"author", "title", "journal", "volume", "number", "pages", "year", "month", "note"},
-    book = {"author", "title", "publisher", "volume", "number", "series", "address", "edition", "year", "month", "note"},
+    article       = {"author", "title", "journal",
+                     "volume", "number", "pages",
+                     "year", "month", "note"},
+
+    book          = {"author", "title", "publisher",
+                     "volume", "number", "series",
+                     "address", "edition", "year", "month", "note"},
+
+    incollection  = {"author", "title", "booktitle", "publisher",
+                     "year", "editor", "volume", "number",
+                     "series", "type", "chapter", "pages",
+                     "address", "edition", "month", "note"},
+
+    techreport    = {"author", "title", "institution", "year",
+                     "type", "number", "address", "month", "note"},
+
+    booklet       = {"title", "author", "howpublished", "address",
+                     "month", "year", "note"},
+
+    conference    = {"author", "title", "booktitle", "editor",
+                    "volume", "number", "series", "pages",
+                    "address", "year", "month", "publisher", "note"},
+
+    mastersthesis = {"author", "title", "school", "type",
+                     "address", "year", "month", "note"},
+
+    phdthesis     = {"author", "title", "year", "school",
+                     "address", "month", "keywords", "note"},
+
+    inbook        = {"author", "title", "editor", "booktitle", "chapter",
+                     "pages", "publisher", "year", "volume", "number",
+                     "series", "type", "address", "edition", "month", "note"},
+
+    misc          = {"author", "title", "howpublished",
+                     "year", "month", "note"},
 }
+fieldTypes.inproceedings = fieldTypes.conference
+
+
+--##############################################################################
+
 
 function writeBblItem(bblItem)
     local authors = bblItem.author
@@ -30,18 +70,18 @@ function writeBblItem(bblItem)
         refAlias = stringEx.trim(refAlias .. (authorsLastNameList or ""))
     end
 
-    local strBblItem = "\\bibitem[".. refAlias .. "]{" .. bblItem.refName .. "}\n"
+    local strBblItem = "\\bibitem[" .. refAlias .. "]{" .. bblItem.refName .. "}\n"
 
     local refType = bblItem.refType
+    local style = bibStyles[refType] or {}
+    for key, value in pairs(bibStyles.default) do
+        style[key] = style[key] or value
+    end
+
     local fields = {}
     for key, value in pairs(bblItem) do
-        local processors
-        processors = bibStyles[refType][key]
-        -- Se falhar tenta carregar o default:
-        if processors == nil then
-            processors = bibStyles.default[key]
-        end
-        -- Se tudo falhar, não fazer nada:
+        local processors = style[key]
+        -- Se falhar, não fazer nada:
         if processors == nil then
             processors = {function(x) return x end}
         end
@@ -53,10 +93,12 @@ function writeBblItem(bblItem)
         end
     end
 
-    local strItemBody = bibStyles[refType].layout
+    local strItemBody = style.layout
+    --print(refType) --<<<<<
     for i, v in ipairs(fieldTypes[refType]) do
         strItemBody = string.gsub(strItemBody, "#"..v, fields[v] or "")
     end
+    strItemBody = string.gsub(strItemBody, "#%w+", "")
 
     strBblItem = strBblItem .. strItemBody
     return strBblItem
@@ -99,11 +141,22 @@ function main(...)
 
     -- Escrever arquivo .bbl:
     local bblContents = ""
+    local bblHeader = [[\begin{thebibliography}{#n}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+]]
+    bblHeader = string.gsub(bblHeader, "#n", #bblItems)
+
+    bblContents = bblContents .. bblHeader
     for i, item in ipairs(bblItems) do
-        if item.refType == "article" then
-            bblContents = bblContents .. writeBblItem(item) .. "\n\n"
-        end
+        bblContents = bblContents .. writeBblItem(item) .. "\n\n"
     end
+
+    bblContents = bblContents .. "\n\n\\end{thebibliography}\n"
 
     --printDeep(bibInfo)
     --printDeep(auxData)

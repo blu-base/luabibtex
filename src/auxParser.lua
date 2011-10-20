@@ -31,10 +31,15 @@ function auxParser.parseContents(auxContents)
     local bibData
     for i, line in ipairs(lines) do
         -- Citations:
-        local ini, fim, refName = string.find(line, "\\citation{([%w%d]+)}")
-        if ini ~= nil and citations[refName] == nil then
-            citations[refName] = citationPos
-            citationPos = citationPos + 1
+        local ini, fim, refNames = string.find(line, "\\citation{([%w%d%._:,]+)}")
+        if ini ~= nil then
+            refNames = stringEx.split(refNames, ",")
+            for j, refName in ipairs(refNames) do
+                if citations[refName] == nil then
+                    citations[refName] = citationPos
+                    citationPos = citationPos + 1
+                end
+            end
         end
 
         -- BibData:
