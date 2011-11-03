@@ -7,11 +7,6 @@ require"luno/funcional"
 
 auxParser = {}
 
---function auxParser.loadFromFile(auxFileName)
---    local auxContents = ioEx.getTextFromFile(auxFileName)
---    return parseAuxContents(auxContents)
---end
-
 local function swapKeyValue(tb)
     local ret = {}
     for i, v in pairs(tb) do
