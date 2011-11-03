@@ -1,29 +1,83 @@
 bibStyles =
 {
+    customBblHeader =
+    [[\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+]],
+
+    customBblFooter = "",
     default =
     {
-        layout = "#author\n#title. #year.",
-        author = {string.upper, abbreviateFirstNames, putLastNameFirst},
-        title = {formatItalics},
+        layout = "#author.\n#title. #year.",
+        author = {upperCase, abbreviateFirstNames, putLastNameFirst},
+        title  = {formatItalics},
     },
 
     article =
     {
-        layout = "#author\n#title. #journal, #volume#number, #year.",
-        author = {string.upper, abbreviateFirstNames, putLastNameFirst},
-        title = {},
+        layout  = "#author.\n#title. #journal, #volume#number#pages, #year.",
+        title   = {},
         journal = {formatItalics},
-        number = {encloseParentheses}
+        number  = {encloseParentheses},
+        pages   =
+        {
+            function(x) return string.gsub(x, "(%d)-(%d)", "%1--%2") end,
+            prepend":",
+        },
     },
 
     book =
     {
-        layout = "#author\n#title. #publisher, #year.",
-        author = {string.upper, abbreviateFirstNames, putLastNameFirst},
-        title = {formatItalics},
+        layout = "#author.\n#title. #publisher#address, #year.",
+        title  = {formatItalics},
+        address = {prepend", "},
     },
 
+    inbook =
+    {
+        layout = "#author.\n#title, capítulo #chapter. #publisher, #address, #year.",
+    },
+
+    incollection =
+    {
+        layout    = "#author.\n#title. Em #editor, #booktitle. #publisher, #year.",
+        title     = {},
+        booktitle = {formatItalics},
+        editor    = {function(x) return string.gsub(x, "%s+and%s+", " e ") end},
+    },
+
+    inproceedings =
+    {
+        layout    = "#author.\n#title. Em #editor#booktitle#number#series#publisher#year.",
+        title     = {},
+        booktitle = {stringEx.trim, formatItalics},
+        series    = {prepend" em "},
+        number    = {prepend", número "},
+        editor    = {append", editor, "},
+        publisher = {prepend", ", append", "},
+    },
+
+
+    techreport =
+    {
+        layout      = "#author.\n#title. #number, #institution, #year.",
+        number      = {prepend"Relatório Técnico "},
+    },
+
+    misc =
+    {
+        layout       = "#author.\n#title. #howpublished, #month#year.",
+        title        = {formatItalics},
+        month        = {prepend"acessado em ", append" de "},
+        howpublished = {},
+    },
 }
+
+
 
 
 
