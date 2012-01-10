@@ -1,9 +1,9 @@
-require"luno/stringEx"
-require"luno/tableEx"
-require"luno/ioEx"
-require"luno/util"
-require"luno/funcional"
-require"luaBibTex/bibFunctions"
+require"luno.stringEx"
+require"luno.tableEx"
+require"luno.ioEx"
+require"luno.util"
+require"luno.funcional"
+require"luaBibTex.bibFunctions"
 
 bibParser = {}
 

@@ -1,6 +1,6 @@
-require"luno/funcional"
-require"luno/stringEx"
-require"luno/tableEx"
+require"luno.funcional"
+require"luno.stringEx"
+require"luno.tableEx"
 
 local function generalize(f, arg)
     local ret
