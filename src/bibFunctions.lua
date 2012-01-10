@@ -25,10 +25,10 @@ end
 function splitName(name)
     name = stringEx.trim(name)
     local groups = {}
-    for val in string.gmatch(name, "{(.+)}") do
+    for val in string.gmatch(name, "{(.-)}") do
         table.insert(groups, val)
     end
-    name = string.gsub(name, "{.+}", "#g")
+    name = string.gsub(name, "{.-}", "#g")
 
     local list = stringEx.split(name, "%s")
 
