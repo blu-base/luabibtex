@@ -1,10 +1,10 @@
-require"luno/argReader"
-require"luno/tableEx"
-require"luno/util"
-require"luaBibTex/auxParser"
-require"luaBibTex/bibParser"
-require"luaBibTex/bibFunctions"
-require"luaBibTex/bblGenerator"
+require"luno.argReader"
+require"luno.tableEx"
+require"luno.util"
+require"luaBibTex.auxParser"
+require"luaBibTex.bibParser"
+require"luaBibTex.bibFunctions"
+require"luaBibTex.bblGenerator"
 
 --bibDir = [[C:\Eric\UFF\Mestrado\Dissertacao\Base\Dissertacao\trunk]]
 --bibFile = bibDir .. "\\referencias.bib"

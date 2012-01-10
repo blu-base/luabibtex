@@ -1,8 +1,8 @@
-require"luno/stringEx"
-require"luno/tableEx"
-require"luno/ioEx"
-require"luno/util"
-require"luno/funcional"
+require"luno.stringEx"
+require"luno.tableEx"
+require"luno.ioEx"
+require"luno.util"
+require"luno.funcional"
 
 
 auxParser = {}
