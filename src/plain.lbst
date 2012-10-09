@@ -1,0 +1,160 @@
+local bibStyle =
+{
+    customBblHeader = "\n",
+    customBblFooter = "",
+}
+
+
+function bibStyle.genItem = (self, bblItem)
+    local formatter = self[bblItem.refType] or {}
+    for key, value in pairs(self.default) do
+        formatter[key] = formatter[key] or value
+    end
+
+    local strBblItemHeader = "\\bibitem{" .. bblItem.refName .. "}\n"
+    local strBblItemBody      = formatter:layout(bblItem)
+    local strBblItem = strBblItemHeader .. strBblItemBody
+
+    return strBblItem
+end
+
+
+bibStyle.default =
+{
+    layout = function(self, bblItem)
+        local formatter = self
+        local ret = ""
+
+        local fields = {}
+        for key, value in pairs(bblItem) do
+            local processors = formatter[key]
+            -- Se falhar, não fazer nada:
+            if processors == nil then
+                processors = {function(x) return x end}
+            end
+            processors = F.pipe(processors)
+
+            if key == "author" then
+                fields[key] = joinAuthors(F.map(processors, value))
+            else
+                fields[key] = processors(value)
+            end
+        end
+
+
+        ret = ret .. fields.author .. ".\n"
+        ret = ret .. fields.title .. ". " .. fields.year .. "."
+        return ret
+    end,
+    author = {upperCase, abbreviateFirstNames, putLastNameFirst},
+    title  = {formatItalics},
+}
+
+
+bibStyle.article =
+{
+    title   = {},
+    journal = {formatItalics},
+    number  = {encloseParentheses},
+    pages   =
+    {
+        function(x) return string.gsub(x, "(%d)-(%d)", "%1--%2") end,
+        prepend":",
+    },
+}
+
+
+bibStyle.book =
+{
+    --author  = {function(x)return x end},
+    author  = {},
+    title  = {formatItalics},
+    address = {prepend", "},
+}
+
+
+bibStyle.inbook =
+{
+}
+
+
+bibStyle.incollection =
+{
+    title     = {},
+    booktitle = {formatItalics},
+    editor    = {function(x) return string.gsub(x, "%s+and%s+", " e ") end},
+}
+
+
+bibStyle.inproceedings =
+{
+    title     = {},
+    booktitle = {luno.string.trim, formatItalics},
+    series    = {prepend" em "},
+    number    = {prepend", número "},
+    editor    = {append", editor, "},
+    publisher = {prepend", ", append", "},
+}
+
+
+bibStyle.techreport =
+{
+    number      = {prepend"Relatório Técnico "},
+}
+
+
+bibStyle.misc =
+{
+    title        = {formatItalics},
+    month        = {prepend"acessado em ", append" de "},
+    howpublished = {},
+}
+
+
+function bibStyle.createBblContents(self, auxData, bibData)
+
+    -- Filtrar pelas publicações que aparecem nos \citation:
+    local referenceList = {}
+    for i, citation in ipairs(auxData.citations) do
+        referenceList[citation] = bibData[citation]
+        referenceList[citation].order = i
+    end
+
+    -- Criar lista ordenada de pelo sobrenome do autor principal:
+    local bblItems = self.createBblItems(referenceList)
+
+    -- Escrever arquivo .bbl:
+    local bblContents = ""
+    local bblHeader = "\\begin{thebibliography}{#n}\n"
+    bblHeader = string.gsub(bblHeader, "#n", #bblItems)
+    bblHeader = bblHeader .. self.customBblHeader
+
+    local bblFooter = "\n\\end{thebibliography}\n"
+
+    bblContents = bblContents .. bblHeader
+    for i, item in ipairs(bblItems) do
+        bblContents = bblContents .. self:genItem(item) .. "\n\n"
+    end
+
+    bblContents = bblContents .. bblFooter
+
+    return bblContents
+end
+
+
+function bibStyle.createBblItems(bibData)
+    -- Verificar se há autores com duas publicações no mesmo ano e diferenciar:
+    local bblItems = {}
+    for refName, refData in pairs(bibData) do
+        refData.refName = refName
+        table.insert(bblItems, refData)
+    end
+
+    --sortBy(bblItems, "order")
+    sortByAuthor(bblItems)
+    --sortByAuthorLastName(bblItems)
+
+    return bblItems
+end
+
+return bibStyle

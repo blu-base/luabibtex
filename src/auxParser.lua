@@ -1,6 +1,6 @@
-require"luno.stringEx"
-require"luno.tableEx"
-require"luno.ioEx"
+require"luno.string"
+require"luno.table"
+require"luno.io"
 require"luno.util"
 require"luno.funcional"
 
@@ -18,7 +18,7 @@ end
 
 function auxParser.parseContents(auxContents)
     local ret = {}
-    local lines = stringEx.splitLines(auxContents)
+    local lines = luno.string.splitLines(auxContents)
 
     local ini, fim
     local citations = {}
@@ -28,7 +28,7 @@ function auxParser.parseContents(auxContents)
         -- Citations:
         local ini, fim, refNames = string.find(line, "\\citation{([%w%d%._:,]+)}")
         if ini ~= nil then
-            refNames = stringEx.split(refNames, ",")
+            refNames = luno.string.split(refNames, ",")
             for j, refName in ipairs(refNames) do
                 if citations[refName] == nil then
                     citations[refName] = citationPos

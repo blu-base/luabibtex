@@ -1,25 +1,105 @@
-bibStyles =
+local bibStyle =
 {
+--[[
     customBblHeader =
-    [[\providecommand{\natexlab}[1]{#1}
+    [ [\providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-]],
-
+] ],
+]]
+    customBblHeader = "\n",
     customBblFooter = "",
+
+    genItem = function(self, bblItem)
+        local style = self
+        local formatter = style[refType] or {}
+        for key, value in pairs(style.default) do
+            formatter[key] = formatter[key] or value
+        end
+
+        local authors = bblItem.author
+        local mainAuthorLastName = string.upper(luno.table.last(authors[1]))
+        local splittedMainAuthorLastName = luno.string.splitWords(mainAuthorLastName)
+        if #splittedMainAuthorLastName > 1 then
+            mainAuthorLastName = "{" .. luno.string.joinWords(splittedMainAuthorLastName).. "}"
+        end
+        local year = bblItem.year
+
+        local refAlias = mainAuthorLastName
+        if #authors > 1 then
+            refAlias = refAlias .. " ET~AL."
+        end
+        refAlias = refAlias .. encloseParentheses(year)
+        if #authors > 1 then
+            -- Aqui é montado o texto que aparece nas citações no meio do documento:
+            local authorsLastNameList = luno.string.join(F.map(F.compose(string.upper, luno.table.last), authors), ", ")
+            refAlias = luno.string.trim(refAlias .. (authorsLastNameList or ""))
+            --refAlias = luno.string.trim(refAlias .. (string.upper(luno.table.last(authors[1])) or "")) --<<<<< Temporário !! Rever o código acima.
+        end
+        local strBblItemHeader = "\\bibitem[" .. refAlias .. "]{" .. bblItem.refName .. "}\n"
+        local strBblItemBody      = formatter:layout(bblItem)
+        strBblItemBody = "\\hskip 4.1mm plus 0pt minus 0pt " .. strBblItemBody
+
+        local strBblItem = strBblItemHeader .. strBblItemBody
+
+        return strBblItem
+
+    --[[
+    local strItemBody = formatter.layout
+    --print(refType) --<<<<<
+    for i, v in ipairs(fieldTypes[refType]) do
+        strItemBody = string.gsub(strItemBody, "#"..v, fields[v] or "")
+    end
+    strItemBody = string.gsub(strItemBody, "#%w+", "")
+
+    -- !! <gambiarra> para acertar a identação na minha dissertação <<<<<
+    strItemBody = "\\hskip 4.1mm plus 0pt minus 0pt " .. strItemBody
+    -- !! </gambiarra>
+
+    strBblItem = strBblItem .. strItemBody
+    return strBblItem
+    --]]
+
+    end,
+
     default =
     {
-        layout = "#author.\n#title. #year.",
+        --layout = "#author.\n#title. #year.",
+        layout = function(self, bblItem)
+            local formatter = self
+            local ret = ""
+
+            local fields = {}
+            for key, value in pairs(bblItem) do
+                local processors = formatter[key]
+                -- Se falhar, não fazer nada:
+                if processors == nil then
+                    processors = {function(x) return x end}
+                end
+                processors = F.pipe(processors)
+
+                if key == "author" then
+                    fields[key] = joinAuthors(F.map(processors, value))
+                else
+                    fields[key] = processors(value)
+                end
+            end
+
+
+            ret = ret .. fields.author .. ".\n"
+            ret = ret .. fields.title .. ". " .. fields.year .. "."
+            return ret
+        end,
         author = {upperCase, abbreviateFirstNames, putLastNameFirst},
         title  = {formatItalics},
     },
 
     article =
     {
-        layout  = "#author.\n#title. #journal, #volume#number#pages, #year.",
+        --layout  = "#author.\n#title. #journal, #volume#number#pages, #year.",
         title   = {},
         journal = {formatItalics},
         number  = {encloseParentheses},
@@ -32,19 +112,19 @@ bibStyles =
 
     book =
     {
-        layout = "#author.\n#title. #publisher#address, #year.",
+        --layout = "#author.\n#title. #publisher#address, #year.",
         title  = {formatItalics},
         address = {prepend", "},
     },
 
     inbook =
     {
-        layout = "#author.\n#title, capítulo #chapter. #publisher, #address, #year.",
+        --layout = "#author.\n#title, capítulo #chapter. #publisher, #address, #year.",
     },
 
     incollection =
     {
-        layout    = "#author.\n#title. Em #editor, #booktitle. #publisher, #year.",
+        --layout    = "#author.\n#title. Em #editor, #booktitle. #publisher, #year.",
         title     = {},
         booktitle = {formatItalics},
         editor    = {function(x) return string.gsub(x, "%s+and%s+", " e ") end},
@@ -52,9 +132,9 @@ bibStyles =
 
     inproceedings =
     {
-        layout    = "#author.\n#title. Em #editor#booktitle#number#series#publisher#year.",
+        --layout    = "#author.\n#title. Em #editor#booktitle#number#series#publisher#year.",
         title     = {},
-        booktitle = {stringEx.trim, formatItalics},
+        booktitle = {luno.string.trim, formatItalics},
         series    = {prepend" em "},
         number    = {prepend", número "},
         editor    = {append", editor, "},
@@ -64,13 +144,13 @@ bibStyles =
 
     techreport =
     {
-        layout      = "#author.\n#title. #number, #institution, #year.",
+        --layout      = "#author.\n#title. #number, #institution, #year.",
         number      = {prepend"Relatório Técnico "},
     },
 
     misc =
     {
-        layout       = "#author.\n#title. #howpublished, #month#year.",
+        --layout       = "#author.\n#title. #howpublished, #month#year.",
         title        = {formatItalics},
         month        = {prepend"acessado em ", append" de "},
         howpublished = {},
@@ -78,6 +158,77 @@ bibStyles =
 }
 
 
+function bibStyle.createBblContents(self, auxData, bibData)
+
+    -- Filtrar pelas publicações que aparecem nos \citation:
+    local referenceList = {}
+    for i, citation in ipairs(auxData.citations) do
+        referenceList[citation] = bibData[citation]
+    end
+
+    -- Criar lista ordenada de pelo sobrenome do autor principal:
+    local bblItems = self.createBblItems(referenceList)
+
+    -- Escrever arquivo .bbl:
+    local bblContents = ""
+    local bblHeader = "\\begin{thebibliography}{#n}\n"
+    bblHeader = string.gsub(bblHeader, "#n", #bblItems)
+    bblHeader = bblHeader .. self.customBblHeader
+
+    local bblFooter = "\n\\end{thebibliography}\n"
+
+    bblContents = bblContents .. bblHeader
+    for i, item in ipairs(bblItems) do
+        bblContents = bblContents .. self:genItem(item) .. "\n\n"
+    end
+
+    bblContents = bblContents .. bblFooter
+
+    return bblContents
+end
 
 
+function bibStyle.createBblItems(bibData)
+    -- Verificar se há autores com duas publicações no mesmo ano e diferenciar:
+    local lookup = {}
+    for refName, refData in pairs(bibData) do
+        local lastName = luno.table.last(refData.author[1])
+        local lookupIndex = lastName .. refData.year
+        if lookup[lookupIndex] == nil then
+            lookup[lookupIndex] = {refName}
+        else
+            table.insert(lookup[lookupIndex], refName)
+        end
+    end
 
+    for lookupIndex, refNames in pairs(lookup) do
+        if #refNames > 1 then
+            local currentSuffix = "a"
+            for i, name in ipairs(refNames) do
+                local refData = bibData[name]
+                refData.year = refData.year .. currentSuffix
+                currentSuffix = nextChar(currentSuffix)
+            end
+        end
+    end
+
+    -- Criar lista ordenada de pelo sobrenome do autor principal:
+    local bblItems = {}
+    for refName, refData in pairs(bibData) do
+        local mainAuthor = refData.author[1]
+        local lastName = string.lower(luno.table.last(mainAuthor))
+        local pos = 1
+        for i = 1, #bblItems do
+            local currentMainAuthor = bblItems[i].author[1]
+            local currentLastName = string.lower(luno.table.last(currentMainAuthor))
+            if lastName < currentLastName then break end
+            pos = pos + 1
+        end
+        refData.refName = refName
+        table.insert(bblItems, pos, refData)
+    end
+    return bblItems
+end
+
+
+return bibStyle

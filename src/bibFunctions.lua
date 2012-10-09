@@ -1,7 +1,25 @@
 require"luno.funcional"
-require"luno.stringEx"
-require"luno.tableEx"
+require"luno.string"
+require"luno.table"
 
+
+-- Aliases:
+lstring = luno.string
+ltable  = luno.table
+lio     = luno.io
+
+trim       = luno.string.trim
+gtrim      = luno.string.gtrim
+split      = luno.string.split
+splitLines = luno.string.splitLines
+join       = luno.string.join
+joinWords  = luno.string.joinWords
+
+isEmpty    = luno.table.isEmpty
+
+
+
+-- Funções:
 local function generalize(f, arg)
     local ret
     if type(arg) == "string" then
@@ -17,22 +35,22 @@ end
 
 
 function joinAuthors(authorsTable)
-    local authorNames = F.map(stringEx.joinWords, authorsTable)
-    return stringEx.join(authorNames, ", ")
+    local authorNames = F.map(joinWords, authorsTable)
+    return join(authorNames, ", ")
 end
 
 
 function splitName(name)
-    name = stringEx.trim(name)
+    name = trim(name)
     local groups = {}
     for val in string.gmatch(name, "{(.-)}") do
         table.insert(groups, val)
     end
     name = string.gsub(name, "{.-}", "#g")
 
-    local list = stringEx.split(name, "%s")
+    local list = split(name, "%s")
 
-    if not tableEx.isEmpty(groups) then
+    if not isEmpty(groups) then
         local pos = 1
         for i, v in ipairs(list) do
             if string.find(v, "#g") then
@@ -106,4 +124,44 @@ function nextChar(ch)
     return string.char(string.byte(ch) + 1)
 end
 
+function formatItems(bblItems, formatter)
 
+end
+
+
+function sortBy(tb, field, comp)
+    comp = comp or function(a, b) return a<b end
+
+    for ini = 1, #tb-1 do
+        for i = ini, #tb do
+            if not comp(tb[ini][field], tb[i][field]) then
+                tb[ini], tb[i] = tb[i], tb[ini]
+            end
+        end
+    end
+end
+
+
+function sortByAuthor(refs, comp)
+    comp = comp or function(a, b) return a<b end
+
+    for ini = 1, #refs-1 do
+        for i = ini, #refs do
+            if not comp(refs[ini].author[1][1], refs[i].author[1][1]) then
+                refs[ini], refs[i] = refs[i], refs[ini]
+            end
+        end
+    end
+end
+
+function sortByAuthorLastName(refs, comp)
+    comp = comp or function(a, b) return a<b end
+
+    for ini = 1, #refs-1 do
+        for i = ini, #refs do
+            if not comp(ltable.last(refs[ini].author[1]), ltable.last(refs[i].author[1])) then
+                refs[ini], refs[i] = refs[i], refs[ini]
+            end
+        end
+    end
+end

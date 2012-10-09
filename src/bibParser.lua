@@ -1,6 +1,6 @@
-require"luno.stringEx"
-require"luno.tableEx"
-require"luno.ioEx"
+require"luno.string"
+require"luno.table"
+require"luno.io"
 require"luno.util"
 require"luno.funcional"
 require"luaBibTex.bibFunctions"
@@ -39,32 +39,32 @@ local refNamePattern = "{([%w%.]+),"
 
 
 local function getKeyValue(fieldLine)
-    fieldLine = F.pipe(stringEx.trim, stringEx.removeLast)(fieldLine)
-    local key, value = unpack(F.map(stringEx.trim, stringEx.split(fieldLine, "=")))
+    fieldLine = F.pipe(trim, lstring.removeLast)(fieldLine)
+    local key, value = unpack(F.map(trim, split(fieldLine, "=")))
     return key, value
 end
 
 
 local function parseRefBody(refBody)
     -- Remover as chaves no início e no final
-    refBody = stringEx.gtrim(refBody, "%s*{", "}%s*")
+    refBody = gtrim(refBody, "%s*{", "}%s*")
 
     -- Remover linhas em branco:
-    local lines = F.filter(F.partial(Op.ne, ""), F.map(stringEx.trim, stringEx.splitLines(refBody)))
+    local lines = F.filter(F.partial(Op.ne, ""), F.map(trim, splitLines(refBody)))
 
     -- Remover a vírgula no final da linha:
-    local refName = stringEx.grtrim(lines[1], ",%s*")
+    local refName = lstring.grtrim(lines[1], ",%s*")
 
     -- Ler os campos:
     local fields = {}
     for i = 2, #lines do
         local key, value = getKeyValue(lines[i])
-        value = stringEx.gtrim(value, "\"")
+        value = gtrim(value, "\"")
         fields[key] = value
     end
 
     -- Acertar autores:
-    fields.author = stringEx.split(fields.author, "%s+and%s+")
+    fields.author = split(fields.author, "%s+and%s+")
     fields.author = F.map(splitName, fields.author)
 
     return refName, fields
@@ -75,7 +75,7 @@ local function getBibFields(bibItem)
     local refName
     local fields
     local results = {string.find(bibItem, refTypePattern)}
-    if not tableEx.isEmpty(results) then
+    if not isEmpty(results) then
         refName, fields = parseRefBody(results[4])
         fields.refType = results[3]
     end
@@ -86,9 +86,9 @@ end
 local function getContentList(contents)
     local entry = {string.find(contents, refPattern)}
     local items = {}
-    while not tableEx.isEmpty(entry) do
+    while not isEmpty(entry) do
         local item, refName = getBibFields(entry[3])
-        if refName ~= nil and stringEx.trim(refName) ~= "" then
+        if refName ~= nil and trim(refName) ~= "" then
             items[refName] = item
         end
         entry = {string.find(contents, refPattern, entry[2]+1)}
