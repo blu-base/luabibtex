@@ -1,3 +1,319 @@
+
+function _(text)
+    return text or ""
+end
+
+function newblock()
+    return "\\newblock "
+end
+
+
+--##############################################################################
+local format = {}
+
+function format.author(entry)
+    local authorList = map(joinWords, entry.author)
+    local initAuthors = take(#authorList-1, authorList)
+    local lastAuthor = ltable.last(authorList)
+    local author
+    if #authorList == 1 then
+        author = authorList[1]
+    else
+        author = join({join(initAuthors, ", "), lastAuthor}, " and ")
+    end
+    return author
+end
+
+function format.title(entry)
+    return entry.title
+end
+
+function format.btitle(entry)
+    return texFormatItalics(entry.title)
+end
+
+function format.journal(entry)
+    return texFormatItalics(entry.journal)
+end
+
+function format.volume(entry)
+    return entry.volume
+end
+
+function format.number(entry)
+    return "(" .. entry.number .. ")"
+end
+
+function format.pages(entry)
+    local ret = ""
+    if entry.pages ~= nil then
+        ret = ":" .. string.gsub(entry.pages, "(%d+)-(%d+)", "%1--%2")
+    end
+    return ret
+end
+
+
+function format.volNumPages(entry)
+    local volume = entry.volume or ""
+    local ret = volume
+    if entry.number ~= nil then
+        ret = ret .. "(" .. entry.number .. ")"
+        if entry.volume == nil then
+            print("there's a number but no volume in " .. entry.refName)
+        end
+    end
+
+    if entry.pages ~= nil then
+        ret = ret .. format.pages(entry)
+    end
+
+    return ret
+end
+
+function format.trNumber(entry)
+    local ret = ""
+    if entry.type == nil then
+        ret = ret .. "Technical Report "
+    else
+        ret = ret .. entry.type .. " "
+    end
+
+    if entry.number ~= nil then
+        ret = ret .. entry.number
+    end
+
+    return ret
+end
+
+
+function format.date(entry)
+    local ret = ", "
+    if entry.year == nil then
+        if entry.month ~= nil then
+            print("there's a month but no year in " .. entry.refName)
+            ret = ret .. entry.month
+        end
+    else
+        if entry.month == nil then
+            ret = ret .. entry.year
+        else
+            ret = ret .. entry.month .. " " .. entry.year
+        end
+    end
+
+    return ret
+end
+
+
+function format.chapterPages(entry)
+    local ret = ", "
+    if entry.chapter == nil then
+        ret = format.pages(entry)
+    else
+        ret = ret .. string.lower(entry.type or "chapter")
+        ret = ret .. " " .. entry.chapter
+        if entry.pages ~= nil then
+            ret = ret .. ", " .. format.pages(entry)
+        end
+    end
+
+    return ret
+end
+
+function eitherOrCheck(entry, key, valMsg)
+    if entry[key] == nil then
+        print( "can't use both " .. valMsg .. " fields in " .. entry.refName)
+    end
+end
+
+function format.bvolume(entry)
+    local ret = ""
+    if entry.volume ~= nil then
+        ret = ret .. "volume " .. entry.volume
+        if entry.series ~= nil then
+            ret = ret .. " of " .. texFormatItalics(entry.series)
+        end
+        eitherOrCheck(entry, "number", "volume and number")
+    end
+    return ret
+end
+
+
+--##############################################################################
+
+local sentence_mt =
+{
+    __index = function(self, i)
+        local function f(entry)
+            return format[i](entry) .. "."
+        end
+        return f
+    end,
+}
+sentence = setmetatable({}, sentence_mt)
+
+function sentencesWith(bblEntry, ...)
+    local arg = {...}
+    local ret = {}
+    for i, formatter in ipairs(arg) do
+        if type(formatter) == "string" then
+            table.insert(ret, formatter)
+        elseif type(formatter) == "function" then
+            table.insert(ret, formatter(bblEntry))
+        elseif type(formatter) == "table" then
+            table.insert(ret, inSentenceWith(bblEntry, unpack(formatter)))
+        else
+            -- Erro
+        end
+    end
+
+    ret = filter(partial(Op.ne, ""), ret)
+    --ret = filter(compose(partial(Op.ne, ""), trim), ret)
+    ret = map(rpartial(Op.cat, "."), ret)
+
+    return join(ret, " ")
+end
+
+
+function inSentenceWith(bblEntry, ...)
+    local arg = {...}
+    local ret = {}
+    for i, formatter in ipairs(arg) do
+        if type(formatter) == "string" then
+            table.insert(ret, formatter)
+        elseif type(formatter) == "function" then
+            table.insert(ret, formatter(bblEntry))
+        else
+            -- Erro
+        end
+    end
+    ret = filter(partial(Op.ne, ""), ret)
+    --ret = filter(compose(partial(Op.ne, ""), trim), ret)
+    return join(ret, ", ")
+end
+
+
+--##############################################################################
+
+
+local entryStyle = {}
+
+
+entryStyle.article =
+{
+    --layout = "#author.\n#title.\n#journal, #volume#number#pages#year.",
+    --[[
+    layout = function(entry)
+        local ret = sentencesWith(entry,
+            sentence.author,
+            newblock,
+            sentence.title,
+            newblock,
+            {format.journal, format.volNumPages, format.date}
+        )
+
+        return ret
+    end,
+    ]]
+    layout = function(entry)
+        local ret = ""
+        ret = ret .. format.author(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. format.title(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. format.journal(entry) .. ", "
+        ret = ret .. format.volNumPages(entry)
+        ret = ret .. format.date(entry) .. "."
+        return ret
+    end,
+
+}
+
+
+entryStyle.book =
+{
+    --layout = "#author.\n#title.\n#publisher#address#year",
+    layout = function (entry)
+        local ret = ""
+        ret = ret .. format.author(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. format.btitle(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. _(entry.publisher) .. ", " .. _(entry.address)
+        ret = ret .. format.date(entry) .. "."
+        return ret
+    end,
+}
+
+
+entryStyle.inbook =
+{
+    --layout = "#author.\n#title, capítulo #chapter. #publisher, #address, #year.",
+    layout = function (entry)
+        local ret = ""
+        ret = ret .. format.author(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. format.btitle(entry) .. format.chapterPages(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. _(entry.publisher) .. ", " .. _(entry.address)
+        ret = ret .. format.date(entry) .. "."
+        return ret
+    end,
+}
+
+
+entryStyle.incollection =
+{
+    --layout = "#author.\n#title.\n#editor, #booktitle. #publisher, #year.",
+    layout = function (entry)
+        local ret = ""
+        ret = ret .. format.author(entry) .. ".\n"
+        ret = ret .. entry.title .. ".\n"
+        ret = ret .. entry.editor .. entry.booktitle .. " "
+        --ret = ret .. entry.publisher .. entry.address .. entry.year .. "."
+        return ret
+    end,
+
+}
+
+
+entryStyle.inproceedings =
+{
+    --layout    = "#author.\n#title. Em #editor#booktitle#number#series#publisher#year.",
+    layout = function (entry)
+        local ret = ""
+        ret = ret .. format.author(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. format.title(entry) .. ".\n"
+        --ret = ret .. join{entry.editor, entry.booktitle, entry.number, entry.series, entry.publisher, entry.year, "."}
+        return ret
+    end,
+
+}
+
+
+entryStyle.techreport =
+{
+    --layout      = "#author.\n#title. #number, #institution, #year.",
+    layout = function (entry)
+        local ret = ""
+        ret = ret .. format.author(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. format.title(entry) .. ".\n"
+        ret = ret .. newblock()
+        ret = ret .. join({format.trNumber(entry), entry.institution, entry.year}, ", ") .. "."
+        return ret
+    end,
+
+}
+
+
+entryStyle.misc =
+{
+}
+
+
+--##############################################################################
 local bibStyle =
 {
     customBblHeader = "\n",
@@ -5,156 +321,28 @@ local bibStyle =
 }
 
 
-function bibStyle.genItem = (self, bblItem)
-    local formatter = self[bblItem.refType] or {}
-    for key, value in pairs(self.default) do
-        formatter[key] = formatter[key] or value
-    end
+function bibStyle.genItem(bblItem)
+    -- Definir formatadores:
+    local fieldStyle = entryStyle[bblItem.refType]
 
-    local strBblItemHeader = "\\bibitem{" .. bblItem.refName .. "}\n"
-    local strBblItemBody      = formatter:layout(bblItem)
-    local strBblItem = strBblItemHeader .. strBblItemBody
+    -- Montar o item:
+    local strBblItem = ""
+    strBblItem = strBblItem .. "\\bibitem{" .. bblItem.refName .. "}\n"
+    if type(fieldStyle.layout) == "function" then
+        strBblItem = strBblItem .. fieldStyle.layout(bblItem)
+    end
 
     return strBblItem
 end
 
 
-bibStyle.default =
-{
-    layout = function(self, bblItem)
-        local formatter = self
-        local ret = ""
+function bibStyle.sortBblData(bblData)
+    -- Ordenar a lista:
+    sortBy(bblData, "year")
+    sortByAuthorLastName(bblData)
 
-        local fields = {}
-        for key, value in pairs(bblItem) do
-            local processors = formatter[key]
-            -- Se falhar, não fazer nada:
-            if processors == nil then
-                processors = {function(x) return x end}
-            end
-            processors = F.pipe(processors)
-
-            if key == "author" then
-                fields[key] = joinAuthors(F.map(processors, value))
-            else
-                fields[key] = processors(value)
-            end
-        end
-
-
-        ret = ret .. fields.author .. ".\n"
-        ret = ret .. fields.title .. ". " .. fields.year .. "."
-        return ret
-    end,
-    author = {upperCase, abbreviateFirstNames, putLastNameFirst},
-    title  = {formatItalics},
-}
-
-
-bibStyle.article =
-{
-    title   = {},
-    journal = {formatItalics},
-    number  = {encloseParentheses},
-    pages   =
-    {
-        function(x) return string.gsub(x, "(%d)-(%d)", "%1--%2") end,
-        prepend":",
-    },
-}
-
-
-bibStyle.book =
-{
-    --author  = {function(x)return x end},
-    author  = {},
-    title  = {formatItalics},
-    address = {prepend", "},
-}
-
-
-bibStyle.inbook =
-{
-}
-
-
-bibStyle.incollection =
-{
-    title     = {},
-    booktitle = {formatItalics},
-    editor    = {function(x) return string.gsub(x, "%s+and%s+", " e ") end},
-}
-
-
-bibStyle.inproceedings =
-{
-    title     = {},
-    booktitle = {luno.string.trim, formatItalics},
-    series    = {prepend" em "},
-    number    = {prepend", número "},
-    editor    = {append", editor, "},
-    publisher = {prepend", ", append", "},
-}
-
-
-bibStyle.techreport =
-{
-    number      = {prepend"Relatório Técnico "},
-}
-
-
-bibStyle.misc =
-{
-    title        = {formatItalics},
-    month        = {prepend"acessado em ", append" de "},
-    howpublished = {},
-}
-
-
-function bibStyle.createBblContents(self, auxData, bibData)
-
-    -- Filtrar pelas publicações que aparecem nos \citation:
-    local referenceList = {}
-    for i, citation in ipairs(auxData.citations) do
-        referenceList[citation] = bibData[citation]
-        referenceList[citation].order = i
-    end
-
-    -- Criar lista ordenada de pelo sobrenome do autor principal:
-    local bblItems = self.createBblItems(referenceList)
-
-    -- Escrever arquivo .bbl:
-    local bblContents = ""
-    local bblHeader = "\\begin{thebibliography}{#n}\n"
-    bblHeader = string.gsub(bblHeader, "#n", #bblItems)
-    bblHeader = bblHeader .. self.customBblHeader
-
-    local bblFooter = "\n\\end{thebibliography}\n"
-
-    bblContents = bblContents .. bblHeader
-    for i, item in ipairs(bblItems) do
-        bblContents = bblContents .. self:genItem(item) .. "\n\n"
-    end
-
-    bblContents = bblContents .. bblFooter
-
-    return bblContents
+    return bblData
 end
 
-
-function bibStyle.createBblItems(bibData)
-    -- Verificar se há autores com duas publicações no mesmo ano e diferenciar:
-    local bblItems = {}
-    for refName, refData in pairs(bibData) do
-        refData.refName = refName
-        table.insert(bblItems, refData)
-    end
-
-    --sortBy(bblItems, "order")
-    sortByAuthor(bblItems)
-    --sortByAuthorLastName(bblItems)
-
-    return bblItems
-end
 
 return bibStyle

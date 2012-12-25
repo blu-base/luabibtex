@@ -1,90 +1,49 @@
 
-
 bblGenerator = {}
+
 --[[
-function bblGenerator.init(style)
-    bblGenerator.style = style
+local bibData_mt =
+{
+    __index = function(t, i) return "" end
+}
+]]
+
+function bblGenerator.createBblData(auxData, bibData, bibStyle)
+    -- Criar lista de referências:
+    local bblData = {}
+    for i, citation in ipairs(auxData.citations) do -- => Filtrar pelas publicações que aparecem nos \citation:
+        local item = bibData[citation]
+        -- Armazenar o nome da referência:
+        item.refName = citation
+        -- Armazenar a ordem de aparição no texto:
+        item.docOrder = i
+
+        table.insert(bblData, item)
+    end
+
+    -- Criar lista ordenada de acordo com o critério definido no estilo:
+    bibStyle.sortBblData(bblData)
+
+    return bblData
 end
 
 
-function bblGenerator.createBblContents(auxData, bibData)
+function bblGenerator.createBblContents(auxData, bibData, bibStyle)
 
-    local style = bblGenerator.style
+    local bblData = bblGenerator.createBblData(auxData, bibData, bibStyle)
 
-    -- Filtrar pelas publicações que aparecem nos \citation:
-    local referenceList = {}
-    for i, citation in ipairs(auxData.citations) do
-        referenceList[citation] = bibData[citation]
-    end
-
-    -- Criar lista ordenada de pelo sobrenome do autor principal:
-    local bblItems = bblGenerator.createBblItems(referenceList)
-
-    -- Escrever arquivo .bbl:
+    -- Escrever conteúdo do arquivo .bbl:
     local bblContents = ""
-    local bblHeader = "\\begin{thebibliography}{#n}\n"
-    bblHeader = string.gsub(bblHeader, "#n", #bblItems)
-    bblHeader = bblHeader .. style.customBblHeader
-
-    local bblFooter = "\n\\end{thebibliography}\n"
-
-    bblContents = bblContents .. bblHeader
-    for i, item in ipairs(bblItems) do
-        bblContents = bblContents .. bblGenerator.writeBblItem(item) .. "\n\n"
+    bblContents = bblContents .. "\\begin{thebibliography}{#n}\n"
+    bblContents = string.gsub(bblContents, "#n", #bblData)
+    bblContents = bblContents .. bibStyle.customBblHeader
+    --printDeep(bblData) --<<<<<
+    for i, bblEntry in ipairs(bblData) do
+        --print(i, bblEntry.refName) --<<<<<
+        bblContents = bblContents .. bibStyle.genItem(bblEntry) .. "\n\n"
     end
-
-    bblContents = bblContents .. bblFooter
+    bblContents = bblContents .. "\\end{thebibliography}\n"
 
     return bblContents
 end
 
-
-function bblGenerator.createBblItems(bibData)
-    -- Verificar se há autores com duas publicações no mesmo ano e diferenciar:
-    local lookup = {}
-    for refName, refData in pairs(bibData) do
-        local lastName = luno.table.last(refData.author[1])
-        local lookupIndex = lastName .. refData.year
-        if lookup[lookupIndex] == nil then
-            lookup[lookupIndex] = {refName}
-        else
-            table.insert(lookup[lookupIndex], refName)
-        end
-    end
-
-    for lookupIndex, refNames in pairs(lookup) do
-        if #refNames > 1 then
-            local currentSuffix = "a"
-            for i, name in ipairs(refNames) do
-                local refData = bibData[name]
-                refData.year = refData.year .. currentSuffix
-                currentSuffix = nextChar(currentSuffix)
-            end
-        end
-    end
-
-    -- Criar lista ordenada de pelo sobrenome do autor principal:
-    -- !!! Na verdade o critério de ordenação deve ser definido no estilo. !!!! <<<<<
-    local bblItems = {}
-    for refName, refData in pairs(bibData) do
-        local mainAuthor = refData.author[1]
-        local lastName = string.lower(luno.table.last(mainAuthor))
-        local pos = 1
-        for i = 1, #bblItems do
-            local currentMainAuthor = bblItems[i].author[1]
-            local currentLastName = string.lower(luno.table.last(currentMainAuthor))
-            if lastName < currentLastName then break end
-            pos = pos + 1
-        end
-        refData.refName = refName
-        table.insert(bblItems, pos, refData)
-    end
-    return bblItems
-end
-
-
-function bblGenerator.writeBblItem(bblItem)
-    local style = bblGenerator.style
-    return style:genItem(bblItem)
-end
-]]

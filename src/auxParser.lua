@@ -2,7 +2,7 @@ require"luno.string"
 require"luno.table"
 require"luno.io"
 require"luno.util"
-require"luno.funcional"
+require"luno.functional"
 
 
 auxParser = {}
@@ -23,7 +23,7 @@ function auxParser.parseContents(auxContents)
     local ini, fim
     local citations = {}
     local citationPos = 1
-    local bibData
+    local bibSource
     for i, line in ipairs(lines) do
         -- Citations:
         local ini, fim, refNames = string.find(line, "\\citation{([%w%d%._:,]+)}")
@@ -37,10 +37,10 @@ function auxParser.parseContents(auxContents)
             end
         end
 
-        -- BibData:
-        ini, fim, bibData = string.find(line, "\\bibdata{([%w%d]+)}")
+        -- BibData (em LuaBibTex passa a ser bibSource):
+        ini, fim, bibSource = string.find(line, "\\bibdata{([%w%d]+)}")
         if ini ~= nil then
-            ret.bibData = bibData
+            ret.bibSource = bibSource
         end
 
         -- BibStyle:

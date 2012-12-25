@@ -1,21 +1,14 @@
-require"luno.funcional"
+require"luno.functional"
 require"luno.string"
 require"luno.table"
 
 
 -- Aliases:
-lstring = luno.string
-ltable  = luno.table
-lio     = luno.io
+luno.string.useAlias()
+luno.table.useAlias()
 
-trim       = luno.string.trim
-gtrim      = luno.string.gtrim
-split      = luno.string.split
-splitLines = luno.string.splitLines
-join       = luno.string.join
-joinWords  = luno.string.joinWords
-
-isEmpty    = luno.table.isEmpty
+luno.string.exposeSome()
+luno.table.exposeSome()
 
 
 
@@ -34,9 +27,14 @@ local function generalize(f, arg)
 end
 
 
-function joinAuthors(authorsTable)
-    local authorNames = F.map(joinWords, authorsTable)
-    return join(authorNames, ", ")
+function joinAuthors(authorsTable, sep)
+    sep = sep or " and " -- Precisa ser atualizada para ajustar corretamente o último nome --<<<<<
+    --local prependComma = prepend", "
+    local authorNames = map(joinWords, authorsTable)
+    --local authorNames2 = map(prependComma, drop(1, authorNames))
+    --authorNames2 = table.insert(authorNames2, 1, authorNames[1])
+    local ret = join(authorNames, ", ")
+    return ret
 end
 
 
@@ -90,6 +88,12 @@ function abbreviateFirstNames(tbName)
 end
 
 
+function texFormatItalics(text)
+    local f = function(x) return "{\\em " .. x .. "}" end
+    return generalize(f, text)
+end
+
+
 function formatItalics(text)
     local f = function(x) return "\\emph{" .. x .. "}" end
     return generalize(f, text)
@@ -124,13 +128,14 @@ function nextChar(ch)
     return string.char(string.byte(ch) + 1)
 end
 
+
 function formatItems(bblItems, formatter)
 
 end
 
 
 function sortBy(tb, field, comp)
-    comp = comp or function(a, b) return a<b end
+    comp = comp or function(a, b) return a <= b end
 
     for ini = 1, #tb-1 do
         for i = ini, #tb do
@@ -143,7 +148,7 @@ end
 
 
 function sortByAuthor(refs, comp)
-    comp = comp or function(a, b) return a<b end
+    comp = comp or function(a, b) return a <= b end
 
     for ini = 1, #refs-1 do
         for i = ini, #refs do
@@ -154,8 +159,9 @@ function sortByAuthor(refs, comp)
     end
 end
 
+
 function sortByAuthorLastName(refs, comp)
-    comp = comp or function(a, b) return a<b end
+    comp = comp or function(a, b) return a <= b end
 
     for ini = 1, #refs-1 do
         for i = ini, #refs do

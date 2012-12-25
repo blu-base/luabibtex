@@ -2,7 +2,7 @@ require"luno.string"
 require"luno.table"
 require"luno.io"
 require"luno.util"
-require"luno.funcional"
+require"luno.functional"
 require"luaBibTex.bibFunctions"
 
 bibParser = {}
@@ -14,14 +14,19 @@ bibParser = {}
     publisher = "Wiley Inter-Science",
     year      = "2002",
 }
+...
 
-agrawal001 =
+--------------------------------------------------------------------------------
+items =
 {
-    refType   = "book",
-    authors   = "Govind P. Agrawal",                  -- Atenção ao plural em "authors" !!
-    title     = "Fiber-Optic Communication Systems",
-    publisher = "Wiley Inter-Science",
-    year      = "2002",
+    agrawal001 =
+    {
+        refType   = "book",
+        author    = {{"Govind", "P.", "Agrawal"}},
+        title     = "Fiber-Optic Communication Systems",
+        publisher = "Wiley Inter-Science",
+        year      = "2002",
+    },
 }
 ]]
 
@@ -63,7 +68,7 @@ local function parseRefBody(refBody)
         fields[key] = value
     end
 
-    -- Acertar autores:
+    -- Acertar autores: (Cada nome fica em uma tabela e as partes do nome também são separadas)
     fields.author = split(fields.author, "%s+and%s+")
     fields.author = F.map(splitName, fields.author)
 

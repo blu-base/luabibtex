@@ -3,6 +3,8 @@ require"lfs"
 require"luno.argReader"
 require"luno.table"
 require"luno.util"
+require"luno.functional"
+luno.functional.exposeAll()
 
 require"luaBibTex.bibFunctions"
 require"luaBibTex.auxParser"
@@ -10,6 +12,7 @@ require"luaBibTex.bibParser"
 require"luaBibTex.bblGenerator"
 require"luaBibTex.logger"
 fsh = require"luaBibTex.fileSystemHelper"
+
 
 --##############################################################################
 --bibDir = [[C:\Eric\UFF\Mestrado\Dissertacao\Base\Dissertacao\trunk]]
@@ -65,18 +68,18 @@ fieldTypes.inproceedings = fieldTypes.conference
 --##############################################################################
 
 --------------------------------------------------------------------------------
-function searchBibStyles(bibStyleFileName, bibSearchPath)
-    local bibStyles
+function loadBibStyle(bibStyleFileName, bibSearchPath)
+    local bibStyle
     local styleFile
     for i, dir in ipairs(bibSearchPath) do
         styleFile = dir .. "/" .. bibStyleFileName
         if fsh.pathExists(styleFile) then
-            bibStyles = dofile(styleFile)
+            bibStyle = dofile(styleFile)
             break
         end
     end
 
-    return bibStyles, styleFile
+    return bibStyle, styleFile
 end
 
 --------------------------------------------------------------------------------
@@ -94,22 +97,20 @@ function main(...)
     logger.logEvent("Usando arquivo aux: " .. auxFileName)
 
     -- Pegar as informações do arquivo .bib:
-    local bibFileName = auxData.bibData .. ".bib"
+    local bibFileName = auxData.bibSource .. ".bib"
     local bibContents = luno.io.getTextFromFile(bibFileName)
-    local bibInfo = bibParser.parseContents(bibContents)
+    local bibData = bibParser.parseContents(bibContents)
 
     -- Carregar estilos:
     local bibStyleFileName = auxData.bibStyle .. ".lbst"
-    local bibStyle, styleFile = searchBibStyles(bibStyleFileName, bibSearchPath)
+    local bibStyle, styleFile = loadBibStyle(bibStyleFileName, bibSearchPath)
     logger.logEvent("Usando arquivo de estilos : " .. styleFile)
 
     -- Gerar .bbl:
-    --bblGenerator.init(bibStyle)
-    --local bblContents = bblGenerator.createBblContents(auxData, bibInfo)
-    local bblContents = bibStyle:createBblContents(auxData, bibInfo)
+    local bblContents = bblGenerator.createBblContents(auxData, bibData, bibStyle)
     luno.io.saveTextToFile(bblContents, baseName .. ".bbl")
 
-    --printDeep(bibInfo)
+    --printDeep(bibData)
     --printDeep(auxData)
     --printDeep(referenceList)
     --printDeep(bblItems)
