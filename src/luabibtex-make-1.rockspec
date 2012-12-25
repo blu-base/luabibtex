@@ -31,7 +31,7 @@ build =
         ["luaBibTex.bblGenerator"]     = "bblGenerator.lua",
         ["luaBibTex.fileSystemHelper"] = "fileSystemHelper.lua",
         ["luaBibTex.logger"]           = "logger.lua",
-        ["luaBibTex.stringBuffer"]     = "stringBuffer.lua",
+        --["luaBibTex.stringBuffer"]     = "stringBuffer.lua",
     },
 
     install =
