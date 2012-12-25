@@ -1,6 +1,6 @@
 #!/bin/bash
 
 baseFile=$1
-luaBibTex=$LUA_DEV/lua/luaBibTex.lua
+luaBibTex=/usr/local/share/lua/5.1/luaBibTex.lua
 
 lua $luaBibTex $baseFile
