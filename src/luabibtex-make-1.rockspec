@@ -44,7 +44,7 @@ build =
         bin =
         {
             ["luaBibTexWin"]   = "scripts/luaBibTex.bat",
-            ["luaBibTexUnix"]  = "scripts/luaBibTex.sh",
+            ["luaBibTex"]  = "scripts/luaBibTex.sh",
         },
     },
 }
