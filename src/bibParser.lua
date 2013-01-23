@@ -4,6 +4,10 @@ require"luno.io"
 require"luno.util"
 require"luno.functional"
 require"luaBibTex.bibFunctions"
+require"luaBibTex.nameObject"
+
+luno.useAliases()
+luno.functional.exposeAll()
 
 bibParser = {}
 
@@ -43,19 +47,35 @@ local refTypePattern = "(%w+)(%b{})"
 local refNamePattern = "{([%w%.]+),"
 
 
-local function getKeyValue(fieldLine)
-    fieldLine = F.pipe(trim, lstring.removeLast)(fieldLine)
-    local key, value = unpack(F.map(trim, split(fieldLine, "=")))
+---
+--    Nomes ficam em uma tabela como a seguinte:
+--    {
+--        first = "",
+--        von   = "",
+--        last  = "",
+--        jr    = "",
+--    }
+--
+function bibParser.parseName(name)
+    local nameObj = NameObject()
+    nameObj:parse(name)
+    return nameObj
+end
+
+
+function bibParser.parseKeyValue(fieldLine)
+    fieldLine = pipe(trim, lstring.removeLast)(fieldLine)
+    local key, value = unpack(map(trim, split(fieldLine, "=")))
     return key, value
 end
 
 
-local function parseRefBody(refBody)
+function bibParser.parseRefBody(refBody)
     -- Remover as chaves no início e no final
     refBody = gtrim(refBody, "%s*{", "}%s*")
 
     -- Remover linhas em branco:
-    local lines = F.filter(F.partial(Op.ne, ""), F.map(trim, splitLines(refBody)))
+    local lines = filter(partial(Op.ne, ""), map(trim, splitLines(refBody)))
 
     -- Remover a vírgula no final da linha:
     local refName = lstring.grtrim(lines[1], ",%s*")
@@ -63,46 +83,46 @@ local function parseRefBody(refBody)
     -- Ler os campos:
     local fields = {}
     for i = 2, #lines do
-        local key, value = getKeyValue(lines[i])
+        local key, value = bibParser.parseKeyValue(lines[i])
         value = gtrim(value, "\"")
         fields[key] = value
     end
 
-    -- Acertar autores: (Cada nome fica em uma tabela e as partes do nome também são separadas)
-    fields.author = split(fields.author, "%s+and%s+")
-    fields.author = F.map(splitName, fields.author)
+    -- Acertar nomes: (Cada nome fica em uma tabela e as partes do nome também são separadas)
+    nameFields = {"author", "editor"}
+    for i, fieldName in ipairs(nameFields) do
+        if fields[fieldName] ~= nil then
+            fields[fieldName] = split(fields[fieldName], "%s+and%s+")
+            fields[fieldName] = map(bibParser.parseName, fields[fieldName])
+        end
+    end
 
     return refName, fields
 end
 
 
-local function getBibFields(bibItem)
+function bibParser.parseBibItem(bibItem)
     local refName
     local fields
     local results = {string.find(bibItem, refTypePattern)}
     if not isEmpty(results) then
-        refName, fields = parseRefBody(results[4])
+        refName, fields = bibParser.parseRefBody(results[4])
         fields.refType = results[3]
     end
     return fields, refName
 end
 
 
-local function getContentList(contents)
-    local entry = {string.find(contents, refPattern)}
+function bibParser.parseDatabase(bibContents)
+    local entry = {string.find(bibContents, refPattern)}
     local items = {}
     while not isEmpty(entry) do
-        local item, refName = getBibFields(entry[3])
+        local item, refName = bibParser.parseBibItem(entry[3])
         if refName ~= nil and trim(refName) ~= "" then
             items[refName] = item
         end
-        entry = {string.find(contents, refPattern, entry[2]+1)}
+        entry = {string.find(bibContents, refPattern, entry[2]+1)}
     end
     return items
-end
-
-
-function bibParser.parseContents(bibContents)
-    return getContentList(bibContents)
 end
 

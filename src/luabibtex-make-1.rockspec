@@ -17,7 +17,8 @@ description =
 dependencies =
 {
     "lua >= 5.1",
-    "luno >= 20121129",
+    "luno >= make",
+    --"luno >= 20121129",
 }
 
 build =
@@ -31,6 +32,7 @@ build =
         ["luaBibTex.bblGenerator"]     = "bblGenerator.lua",
         ["luaBibTex.fileSystemHelper"] = "fileSystemHelper.lua",
         ["luaBibTex.logger"]           = "logger.lua",
+        ["luaBibTex.nameObject"]       = "nameObject.lua",
         --["luaBibTex.stringBuffer"]     = "stringBuffer.lua",
     },
 
@@ -39,6 +41,7 @@ build =
         lua =
         {
             ["luaBibTex"] = "luaBibTex.lua",
+            ["luaBibTex.plain"] = "plain.lbst",
         },
 
         bin =
@@ -46,5 +49,6 @@ build =
             ["luaBibTexWin"]   = "scripts/luaBibTex.bat",
             ["luaBibTex"]  = "scripts/luaBibTex.sh",
         },
+
     },
 }

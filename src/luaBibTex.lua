@@ -82,10 +82,16 @@ function loadBibStyle(bibStyleFileName, bibSearchPath)
     return bibStyle, styleFile
 end
 
+
+function getDirFromPath(path)
+    return string.match(path, "(.-)[\\/]%?") or ""
+end
 --------------------------------------------------------------------------------
 function main(...)
 
-    bibSearchPath = {".", "../src"}
+    local bibSearchPath = split(package.path, ";")
+    bibSearchPath = map(getDirFromPath, bibSearchPath)
+    bibSearchPath = map(rpartial(Op.cat, "/luabibtex"), bibSearchPath)
 
     local arg = {...}
     local baseName = arg[1]
@@ -99,12 +105,16 @@ function main(...)
     -- Pegar as informações do arquivo .bib:
     local bibFileName = auxData.bibSource .. ".bib"
     local bibContents = luno.io.getTextFromFile(bibFileName)
-    local bibData = bibParser.parseContents(bibContents)
+    local bibData = bibParser.parseDatabase(bibContents)
 
     -- Carregar estilos:
     local bibStyleFileName = auxData.bibStyle .. ".lbst"
     local bibStyle, styleFile = loadBibStyle(bibStyleFileName, bibSearchPath)
-    logger.logEvent("Usando arquivo de estilos : " .. styleFile)
+    if bibStyle ~= nil then
+        logger.logEvent("Usando arquivo de estilos : " .. styleFile)
+    else
+        error("Bibfile " .. bibStyleFileName .. " not found", 2)
+    end
 
     -- Gerar .bbl:
     local bblContents = bblGenerator.createBblContents(auxData, bibData, bibStyle)

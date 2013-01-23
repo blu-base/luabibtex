@@ -38,35 +38,6 @@ function joinAuthors(authorsTable, sep)
 end
 
 
-function splitName(name)
-    name = trim(name)
-    local groups = {}
-    for val in string.gmatch(name, "{(.-)}") do
-        table.insert(groups, val)
-    end
-    name = string.gsub(name, "{.-}", "#g")
-
-    local list = split(name, "%s")
-
-    if not isEmpty(groups) then
-        local pos = 1
-        for i, v in ipairs(list) do
-            if string.find(v, "#g") then
-                list[i] = string.gsub(v, "#g", groups[pos])
-                pos = pos + 1
-            end
-        end
-    end
-    return list
-end
-
-
-function getLastName(name)
-    local list = splitName(name)
-    return list[#list]
-end
-
-
 function putLastNameFirst(tbName)
     local list = copy(tbName)
     table.insert(list, 1, table.remove(list))
@@ -164,10 +135,60 @@ function sortByAuthorLastName(refs, comp)
     comp = comp or function(a, b) return a <= b end
 
     for ini = 1, #refs-1 do
+        --printDeep(refs[ini].author[1]) --<<<<<
         for i = ini, #refs do
-            if not comp(ltable.last(refs[ini].author[1]), ltable.last(refs[i].author[1])) then
+            local key1 = string.lower(trim(joinWords(refs[ini].author[1].von) .. " " .. joinWords(refs[ini].author[1].last)))
+            local key2 = string.lower(trim(joinWords(refs[i].author[1].von) .. " " .. joinWords(refs[i].author[1].last)))
+            if not comp(key1, key2) then
                 refs[ini], refs[i] = refs[i], refs[ini]
             end
         end
     end
+end
+
+
+function firstLetterUpperCase(text)
+    local c = string.upper(lstring.firstChar(text))
+    return c .. string.lower(lstring.removeFirst(text))
+end
+
+--##############################################################################
+-- Funções nativas do BibTeX:
+
+function joinName(name)
+    local ret = ""
+    if not ltable.isEmpty(name.first) then
+        ret = ret .. join(name.first, "~") .. " "
+    end
+    if not ltable.isEmpty(name.von) then
+        ret = ret .. join(name.von, "~") .. " "
+    end
+    if not ltable.isEmpty(name.last) then
+        ret = ret .. joinWords(name.last) .. " "
+    end
+    if not ltable.isEmpty(name.jr) then
+        ret = ret .. ", " .. joinWords(name.jr)
+    end
+    ret = trim(ret)
+    return ret
+end
+
+
+function changeCase(text, mode)
+    local f
+    if mode == "l" then
+        f = string.lower
+    elseif mode == "u" then
+        f = string.upper
+    elseif mode == "t" then
+        f = function(text)
+            local ret = string.lower(text)
+            ret = string.gsub(ret, "^(%a)", string.upper)
+            ret = string.gsub(ret, "(:%s*%a)", string.upper)
+            return ret
+        end
+    else
+        error("Invalid value for mode: " .. mode .. ". Use 'l', 'u', or 't'.", 2)
+    end
+    return f(text)
 end
