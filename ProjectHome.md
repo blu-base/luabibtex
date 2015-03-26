@@ -1,0 +1,1 @@
+O LuaBibTex tem como objetivo tornar simples a customização de estilos de bibliografia para BibTex através da descrição desses estilos em Lua.
