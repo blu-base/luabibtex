@@ -18,6 +18,7 @@ dependencies =
 {
     "lua >= 5.1",
     "luno >= make",
+    "luafilesystem >= 1.5.0",
     --"luno >= 20121129",
 }
 
