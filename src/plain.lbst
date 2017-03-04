@@ -266,9 +266,9 @@ function sentencesWith(bblEntry, ...)
         end
     end
 
-    ret = filter(partial(Op.ne, ""), ret)
-    --ret = filter(compose(partial(Op.ne, ""), trim), ret)
-    ret = map(rpartial(Op.cat, "."), ret)
+    ret = filter(partial(op.ne, ""), ret)
+    --ret = filter(compose(partial(op.ne, ""), trim), ret)
+    ret = map(rpartial(op.cat, "."), ret)
 
     return join(ret, " ")
 end
@@ -286,8 +286,8 @@ function inSentenceWith(bblEntry, ...)
             -- Erro
         end
     end
-    ret = filter(partial(Op.ne, ""), ret)
-    --ret = filter(compose(partial(Op.ne, ""), trim), ret)
+    ret = filter(partial(op.ne, ""), ret)
+    --ret = filter(compose(partial(op.ne, ""), trim), ret)
     return join(ret, ", ")
 end
 

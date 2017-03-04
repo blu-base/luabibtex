@@ -3,14 +3,14 @@ package = "LuaBibTex"
 version = "make-1"
 source =
 {
-    url = "http://...",
+    url = "git://github.com/echiesse/luabibtex",
 }
 
 description =
 {
     summary = "Lua implementation of BibTeX.",
     detailed = [[]],
-    homepage = "http://code.google.com/p/luabibtex/",
+    homepage = "https://github.com/echiesse/luabibtex",
     license = "MIT",
 }
 
@@ -26,6 +26,7 @@ build =
     type = "builtin",
     modules =
     {
+        ["luaBibTex"] = "luaBibTex.lua",
         ["luaBibTex.bibParser"]        = "bibParser.lua",
         ["luaBibTex.auxParser"]        = "auxParser.lua",
         ["luaBibTex.bibFunctions"]     = "bibFunctions.lua",
@@ -40,13 +41,12 @@ build =
     {
         lua =
         {
-            ["luaBibTex"] = "luaBibTex.lua",
             ["luaBibTex.plain"] = "plain.lbst",
         },
 
         bin =
         {
-            ["luaBibTexWin"]   = "scripts/luaBibTex.bat",
+            ["luaBibTex.bat"]   = "scripts/luaBibTex.bat",
             ["luaBibTex"]  = "scripts/luaBibTex.sh",
         },
 

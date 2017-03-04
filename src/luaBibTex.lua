@@ -91,7 +91,7 @@ function main(...)
 
     local bibSearchPath = split(package.path, ";")
     bibSearchPath = map(getDirFromPath, bibSearchPath)
-    bibSearchPath = map(rpartial(Op.cat, "/luaBibTex"), bibSearchPath)
+    bibSearchPath = map(rpartial(op.cat, "/luaBibTex"), bibSearchPath)
 
     local arg = {...}
     local baseName = arg[1]
@@ -128,5 +128,4 @@ function main(...)
 end
 
 
-main(...)
-
+--main(...)

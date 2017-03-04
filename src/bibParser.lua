@@ -75,7 +75,7 @@ function bibParser.parseRefBody(refBody)
     refBody = gtrim(refBody, "%s*{", "}%s*")
 
     -- Remover linhas em branco:
-    local lines = filter(partial(Op.ne, ""), map(trim, splitLines(refBody)))
+    local lines = filter(partial(op.ne, ""), map(trim, splitLines(refBody)))
 
     -- Remover a vírgula no final da linha:
     local refName = lstring.grtrim(lines[1], ",%s*")
@@ -125,4 +125,3 @@ function bibParser.parseDatabase(bibContents)
     end
     return items
 end
-
