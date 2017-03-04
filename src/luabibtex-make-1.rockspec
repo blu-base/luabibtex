@@ -4,6 +4,7 @@ version = "make-1"
 source =
 {
     url = "git://github.com/echiesse/luabibtex",
+    tag = ???
 }
 
 description =
@@ -50,6 +51,5 @@ build =
             ["luaBibTex.bat"]   = "scripts/luaBibTex.bat",
             ["luaBibTex"]  = "scripts/luaBibTex.sh",
         },
-
     },
 }
